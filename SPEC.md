@@ -70,10 +70,10 @@ Em escopo vazio, todos os indicadores valem 0.
 
 | Componente | Função | Dados |
 |---|---|---|
-| Lista de reposição prioritária | `replenishment_list(view)` | Linhas com `needs_reorder`, ordenadas por 5.2. Colunas exibidas: Produto, Categoria, Fornecedor, Estoque, Ponto, Vendas (un), Cobertura, A repor, Custo est. (US$), Situação. Cobertura vazia aparece como "—". A coluna Situação tem cor por faixa (sem vermelho). |
-| Gráfico estoque ÷ ponto | `ratio_chart_data(view, n=12)` | Produtos **ativos** com `ratio` definido, os 12 de menor `ratio`. Linha de referência em 100%. |
-| Gráficos por categoria e por fornecedor | `counts_by(view, "category_name")` / `("supplier_name")` | Contagem de linhas com `needs_reorder`, por rótulo, em ordem decrescente. |
-| Detalhe de produtos | `view` filtrado | Todas as linhas do escopo, ordenadas por situação e nome, dentro de um bloco recolhido. |
+| Lista de reposição prioritária (RF-04) | `replenishment_list(view)` | Linhas com `needs_reorder`, ordenadas por 5.2. Colunas exibidas: Produto, Categoria, Fornecedor, Estoque, Ponto, Vendas (un), Cobertura, A repor, Custo est. (US$), Situação. Cobertura vazia aparece como "—". A coluna Situação tem cor por faixa (sem vermelho). |
+| Gráfico estoque ÷ ponto (RF-05) | `ratio_chart_data(view, n=12)` | Produtos **ativos** com `ratio` definido, os 12 de menor `ratio`. Linha de referência em 100%. |
+| Gráficos por categoria e por fornecedor (RF-06) | `counts_by(view, "category_name")` / `("supplier_name")` | Contagem de linhas com `needs_reorder`, por rótulo, em ordem decrescente. |
+| Detalhe de produtos (RF-07) | `view` filtrado | Todas as linhas do escopo, ordenadas por situação e nome, dentro de um bloco recolhido. |
 | Período padrão | `sales_period(tables)` | Menor e maior `order_date` da base; `(None, None)` se não houver pedidos válidos. Define os limites e os valores iniciais dos seletores de data. |
 
 ## 4. Pipeline de cálculo
