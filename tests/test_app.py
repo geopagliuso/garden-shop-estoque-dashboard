@@ -106,3 +106,22 @@ def test_app_shows_message_instead_of_crashing_on_invalid_products(monkeypatch, 
     at = run_app(monkeypatch, tmp_data)
     assert not at.exception
     assert "products.csv" in text_of(at.warning) and "product_id=7" in text_of(at.warning)
+
+
+def test_app_period_without_orders_shows_zero_sales_and_keeps_stock(monkeypatch, raw_dir):
+    """CA-09: entre 03/02/2024 e 10/02/2024 não há pedidos na base original."""
+    at = run_app(monkeypatch, raw_dir)
+    at.sidebar.date_input(key="f_inicio").set_value(date(2024, 2, 3))
+    at.sidebar.date_input(key="f_fim").set_value(date(2024, 2, 10)).run()
+    assert not at.exception
+    values = kpis(at)
+    assert values["Unidades vendidas"] == "0"
+    assert values["Valor do estoque (custo)"] == "US$ 4.731,00" and values["Produtos a repor"] == "5"
+
+
+def test_app_warns_when_start_is_after_end(monkeypatch, fixtures_dir):
+    at = run_app(monkeypatch, fixtures_dir)
+    at.sidebar.date_input(key="f_inicio").set_value(date(2024, 6, 1))
+    at.sidebar.date_input(key="f_fim").set_value(date(2024, 5, 1)).run()
+    assert not at.exception
+    assert "posterior" in text_of(at.warning)

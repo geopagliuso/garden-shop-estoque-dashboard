@@ -59,8 +59,8 @@ A Garden Shop vende produtos de jardinagem pela internet. A equipe de gestão n�
 | ID | Requisito | Utilidade para o negócio |
 |---|---|---|
 | **RF-01** | Carregar os cinco CSVs de `data/raw/` sem alterá-los e mostrar avisos de qualidade quando linhas forem descartadas. | Garante dados originais preservados e transparência sobre exclusões. |
-| **RF-02** | Mostrar seis indicadores: **Produtos no escopo**, **Produtos a repor**, **Estoque zerado**, **Valor do estoque a custo**, **Custo para repor**, **Unidades vendidas (efetivas)**. | Resposta em segundos às perguntas da gestão. |
-| **RF-03** | Oferecer filtros: **período das vendas**, **categoria**, **fornecedor**, **situação do estoque**, **status dos pedidos considerados** (shipped, processing, pending) e a chave **incluir descontinuados** (padrão: desligada). | Permite ao comprador recortar por quem ele negocia e por tipo de produto. |
+| **RF-02** | Mostrar seis indicadores: **Produtos no escopo**, **Produtos a repor**, **Estoque zerado**, **Valor do estoque (custo)**, **Custo para repor**, **Unidades vendidas** (vendas efetivas). | Resposta em segundos às perguntas da gestão. |
+| **RF-03** | Oferecer filtros: **período das vendas** (data inicial e data final, limitadas às datas da base), **categoria**, **fornecedor**, **situação do estoque**, **status dos pedidos considerados** (shipped, processing, pending) e a chave **incluir descontinuados** (padrão: desligada). | Permite ao comprador recortar por quem ele negocia e por tipo de produto. |
 | **RF-04** | Mostrar a **lista de reposição prioritária**: produtos ativos abaixo do ponto, ordenados por gravidade, com fornecedor, estoque/ponto, vendas, quantidade a repor e custo estimado. | É o que a equipe usa para agir. |
 | **RF-05** | Mostrar um gráfico de barras **estoque atual ÷ ponto de reposição** (os 12 produtos ativos com menor razão), com linha em 100%. | Compara produtos de escalas diferentes em uma régua comum. |
 | **RF-06** | Mostrar dois gráficos de barras: **produtos a repor por categoria** e **por fornecedor**. | Responde quais categorias e fornecedores concentram a reposição. |
@@ -88,7 +88,7 @@ Cada critério é observável na tela ou nos testes. Os valores usam os CSVs ori
 
 | ID | Cenário | Resultado esperado | Refs |
 |---|---|---|---|
-| **CA-01** | Abrir o painel com os filtros padrão. | Produtos no escopo = **23**; Produtos a repor = **5**; Estoque zerado = **1**; Valor do estoque a custo = **US$ 4.731,00**; Custo para repor = **US$ 152,00**; Unidades vendidas = **86**. | RF-02, RN-02, RN-05, RN-06 |
+| **CA-01** | Abrir o painel com os filtros padrão. | Produtos no escopo = **23**; Produtos a repor = **5**; Estoque zerado = **1**; Valor do estoque (custo) = **US$ 4.731,00**; Custo para repor = **US$ 152,00**; Unidades vendidas = **86**. | RF-02, RN-02, RN-05, RN-06 |
 | **CA-02** | A lista de reposição com filtros padrão. | Cinco linhas, nesta ordem: Hanging Basket, Tomato Seeds 'Roma', Hand Cultivator, Orchid Food, Pothos 'Golden'. O Bird Feeder (descontinuado, 4/6) **não** aparece. | RF-04, RN-03, RN-08 |
 | **CA-03** | Ligar "Incluir descontinuados". | Produtos no escopo = **24**; Valor do estoque = **US$ 4.763,00**; Produtos a repor continua **5**; Custo para repor continua **US$ 152,00**. O Bird Feeder aparece na tabela de detalhe como "Descontinuado". | RF-03, RN-03 |
 | **CA-04** | Pedido cancelado. | O pedido 17 (1 Pruning Shears) não conta: Unidades vendidas = **86** (seriam 87 com o cancelado) e Pruning Shears = **1** unidade. | RN-02 |
@@ -96,14 +96,19 @@ Cada critério é observável na tela ou nos testes. Os valores usam os CSVs ori
 | **CA-06** | Considerar só o status `shipped`. | Unidades vendidas = **65**. | RF-03, RN-02 |
 | **CA-07** | Filtrar categoria Fertilizer. | Produtos no escopo = **2**; Produtos a repor = **1** (Orchid Food). | RF-03 |
 | **CA-08** | Filtrar categoria Tools e fornecedor Terra Pots Co (combinação sem produtos). | Painel mostra "Nenhum produto encontrado para os filtros selecionados". Indicadores de contagem e valores em zero. Sem erro. | RF-08 |
-| **CA-09** | Período sem pedidos (ex.: 01/01/2025 a 31/01/2025). | Unidades vendidas = **0**; cobertura vazia para todos; nenhum erro. O estoque e a reposição não mudam. | RN-01, RN-09 |
+| **CA-09** | Período sem pedidos (ex.: 03/02/2024 a 10/02/2024; o seletor só aceita datas dentro da base). | Unidades vendidas = **0**; cobertura vazia para todos; nenhum erro. O estoque e a reposição não mudam. | RN-01, RN-09 |
 | **CA-10** | Produto sem vendas (Hanging Basket). | Aparece na lista de reposição com 0 unidades vendidas e cobertura vazia. | RN-09 |
 | **CA-11** | Relacionar produtos e itens de pedido. | O valor do estoque de qualquer produto com vários itens de pedido (ex.: Fiddle-Leaf Fig, 4 itens) é contado uma vez: 14 × US$ 18 = **US$ 252,00**. | RN-07 |
 | **CA-12** | CSV com linhas inválidas (item sem pedido, quantidade 0, status desconhecido). | As linhas são excluídas das vendas e o painel mostra um aviso com a contagem. | RF-01, RN-10 |
-| **CA-13** | CSV com `quantity_on_hand` ausente ou negativo. | A carga é interrompida com mensagem que indica o arquivo, o campo e o `product_id`. | RN-10 |
+| **CA-13** | CSV com `quantity_on_hand` ausente ou negativo. | A carga é interrompida com mensagem (em aviso amarelo, não vermelho) que indica o arquivo, o campo e o `product_id`. | RN-10 |
+| **CA-15** | Data inicial posterior à data final. | O painel mostra um aviso pedindo para ajustar o período e não calcula. | RF-03 |
 | **CA-14** | Verificar os CSVs depois de usar o painel. | Os arquivos de `data/raw/` não mudaram. | RF-01 |
 
 ## 8. Pontos em aberto
 
 - Confirmar com o negócio se `quantity_on_hand` já desconta pedidos `pending` e `processing`.
 - Confirmar se `reorder_level` considera o prazo de entrega de cada fornecedor.
+
+## 9. Evidência de funcionamento
+
+O print do painel em execução, com os dados originais carregados, está em `docs/print_dashboard.png`. Ele mostra os seis indicadores, os filtros, a lista de reposição e os gráficos.
