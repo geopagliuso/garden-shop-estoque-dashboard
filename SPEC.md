@@ -45,9 +45,9 @@ Os CSVs ficam em `data/raw/` (ou no diretório indicado por `GARDEN_SHOP_DATA_DI
 | Produtos no escopo | `n_products` | número de linhas do `view` filtrado | Sim |
 | Produtos a repor | `n_to_reorder` | linhas com `needs_reorder = True` | Não (RN-03) |
 | Estoque zerado | `n_zero` | linhas ativas com `status = "Zerado"` | Não |
-| Valor do estoque a custo | `stock_value` | Σ `quantity_on_hand × cost` | Sim |
+| Valor do estoque (custo) | `stock_value` | Σ `quantity_on_hand × cost` | Sim |
 | Custo para repor | `reorder_cost` | Σ `reorder_cost` das linhas com `needs_reorder` | Não |
-| Unidades vendidas (efetivas) | `units_sold` | Σ `units_sold` | Sim |
+| Unidades vendidas | `units_sold` | Σ `units_sold` | Sim |
 
 Em escopo vazio, todos os indicadores valem 0.
 
@@ -70,10 +70,11 @@ Em escopo vazio, todos os indicadores valem 0.
 
 | Componente | Função | Dados |
 |---|---|---|
-| Lista de reposição prioritária | `replenishment_list(view)` | Linhas com `needs_reorder`, ordenadas por 5.2. Colunas: produto, categoria, fornecedor, estoque, ponto, unidades vendidas, cobertura, a repor, custo estimado, situação. |
+| Lista de reposição prioritária | `replenishment_list(view)` | Linhas com `needs_reorder`, ordenadas por 5.2. Colunas exibidas: Produto, Categoria, Fornecedor, Estoque, Ponto, Vendas (un), Cobertura, A repor, Custo est. (US$), Situação. Cobertura vazia aparece como "—". A coluna Situação tem cor por faixa (sem vermelho). |
 | Gráfico estoque ÷ ponto | `ratio_chart_data(view, n=12)` | Produtos **ativos** com `ratio` definido, os 12 de menor `ratio`. Linha de referência em 100%. |
 | Gráficos por categoria e por fornecedor | `counts_by(view, "category_name")` / `("supplier_name")` | Contagem de linhas com `needs_reorder`, por rótulo, em ordem decrescente. |
-| Detalhe de produtos | `view` filtrado | Todas as linhas do escopo, ordenadas por situação e nome. |
+| Detalhe de produtos | `view` filtrado | Todas as linhas do escopo, ordenadas por situação e nome, dentro de um bloco recolhido. |
+| Período padrão | `sales_period(tables)` | Menor e maior `order_date` da base; `(None, None)` se não houver pedidos válidos. Define os limites e os valores iniciais dos seletores de data. |
 
 ## 4. Pipeline de cálculo
 
@@ -115,7 +116,7 @@ Casos de borda: estoque exatamente igual ao ponto → Adequado; estoque exatamen
 
 | Filtro (tela) | Parâmetro | Padrão | Efeito |
 |---|---|---|---|
-| Período das vendas | `start`, `end` em `build_product_view` | menor e maior `order_date` | Só `units_sold` e `coverage` |
+| Período das vendas ("Vendas a partir de" e "Vendas até") | `start`, `end` em `build_product_view` | menor e maior `order_date` | Só `units_sold` e `coverage`. O seletor não aceita datas fora da base. Data inicial posterior à final: aviso e nenhum cálculo. |
 | Status dos pedidos | `statuses` em `build_product_view` | os três | Só `units_sold` e `coverage` |
 | Categoria | `categories` em `apply_filters` | todas | Mantém só as categorias escolhidas |
 | Fornecedor | `suppliers` em `apply_filters` | todos | Mantém só os fornecedores escolhidos |
@@ -149,7 +150,7 @@ Lista vazia ou `None` em categoria, fornecedor ou situação significa "todos". 
 | `discontinued` fora de true/false | `DataError`. |
 | Escopo vazio, período sem vendas, produto sem vendas | Resultado válido: zeros e cobertura vazia, sem exceção. |
 
-Os avisos são uma lista de textos em `Tables.warnings` e aparecem no painel, em uma área informativa (RF-01, RF-08).
+Os avisos são uma lista de textos em `Tables.warnings` e aparecem no painel, em uma área informativa recolhida (RF-01, RF-08). `DataError` na carga aparece como aviso amarelo (`st.warning`) com a mensagem completa, e o painel para sem quebrar. A cor vermelha não é usada em nenhuma parte da tela, pois é reservada às correções do professor.
 
 ## 9. Módulos e responsabilidades
 
@@ -209,7 +210,7 @@ O recorte contém 6 produtos e os pedidos ligados a eles, tirados das linhas ori
 | Só status `shipped` | Unidades **12** (5 + 3 + 4 + 0). |
 | Contando o cancelado por engano | Unidades seriam 16. O teste garante 15. |
 | Fornecedor "Terra Pots Co" e categoria "Tools" | Escopo vazio: todos os indicadores 0 e lista vazia. |
-| Período 01/01/2025 a 31/01/2025 | Unidades **0**, cobertura vazia em todas as linhas; valor do estoque **494,50**. |
+| Período 01/01/2025 a 31/01/2025 (nível de função; no app o seletor só aceita datas da base, então a tela usa 03/02/2024 a 10/02/2024 com os dados originais) | Unidades **0**, cobertura vazia em todas as linhas; valor do estoque **494,50**. |
 | Junção errada (itens × produtos) | O produto 1 (4 itens de pedido) teria estoque contado 4 vezes (1.008 em vez de 252). O teste garante 252. |
 
 ### 10.2 Dados originais (`data/raw/`), filtros padrão
@@ -254,7 +255,7 @@ Cada regra tem pelo menos um teste automatizado, escrito **antes** da implementa
 | Prioridade da lista | RN-08, CA-02 | `tests/test_metrics.py` |
 | Produto sem vendas; filtros sem resultado | RN-09, CA-08, CA-10, RF-08 | `tests/test_metrics.py` |
 | Valores esperados com os CSVs originais | CA-01 a CA-07 | `tests/test_metrics.py` |
-| O app abre e mostra o estado vazio | RF-02, RF-08 | `tests/test_app.py` |
+| O app mostra os indicadores esperados, o estado vazio, avisos de dados, erro de carga e os filtros (descontinuados, período, status, data invertida) | RF-02, RF-03, RF-08, CA-08, CA-09, CA-12, CA-13, CA-15 | `tests/test_app.py` |
 
 ## 12. Decisões e descobertas
 
@@ -263,4 +264,8 @@ Cada regra tem pelo menos um teste automatizado, escrito **antes** da implementa
 | 02/11/2026 | `pending` e `processing` contam como venda efetiva; só `cancelled` sai. | RN-02. O filtro de status permite ver só `shipped`. |
 | 02/11/2026 | Descontinuados entram em escopo, valor e vendas quando a chave está ligada, mas nunca na reposição. | RN-03. |
 | 02/11/2026 | Ao montar o recorte a partir das linhas originais, a conta à mão do Fiddle-Leaf Fig estava errada: faltava o pedido 1 (4 itens, não 3). | Seção 10.1 corrigida (unidades 15, só shipped 12, junção errada 1.008). |
+| 02/11/2026 | Ao rodar o painel de verdade, o indicador de valor do estoque saiu cortado e a lista de reposição ficou truncada ao lado do gráfico. | Layout revisado: lista em largura total, cabeçalhos curtos, fonte menor nos indicadores. Os testes automáticos não pegam esse tipo de problema; ele só apareceu com o print. |
+| 02/11/2026 | O tema padrão do Streamlit usa vermelho como cor de destaque (filtros selecionados, por exemplo). | `.streamlit/config.toml` define tema verde; erros de dados usam `st.warning` (amarelo). |
+| 02/11/2026 | O seletor de período não aceitava o exemplo de CA-09 (2025). | CA-09 passou a usar 03/02/2024 a 10/02/2024; a regra continua testada no nível da função. |
+| 02/11/2026 | `use_container_width` está obsoleto no Streamlit. | O app usa `width="stretch"`; requisito `streamlit>=1.66`. |
 | 02/11/2026 | O dicionário diz `DD/MM/AAAA`, mas os CSVs usam `AAAA-MM-DD`. | A leitura aceita os dois (seção 8). |
