@@ -1,0 +1,7 @@
+product_id,product_name,category_id,supplier_id,price,cost,quantity_on_hand,reorder_level,discontinued
+1,Fiddle-Leaf Fig,1,1,32.00,18.00,14,10,false
+4,Pothos 'Golden',1,4,12.00,5.00,8,12,false
+7,Tomato Seeds 'Roma',2,6,2.75,0.90,5,40,false
+9,Pruning Shears,3,5,22.00,11.00,18,8,false
+14,Hanging Basket,4,2,14.00,6.00,0,10,false
+24,Bird Feeder,8,5,17.00,8.00,4,6,true

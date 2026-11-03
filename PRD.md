@@ -98,7 +98,7 @@ Cada critério é observável na tela ou nos testes. Os valores usam os CSVs ori
 | **CA-08** | Filtrar categoria Tools e fornecedor Terra Pots Co (combinação sem produtos). | Painel mostra "Nenhum produto encontrado para os filtros selecionados". Indicadores de contagem e valores em zero. Sem erro. | RF-08 |
 | **CA-09** | Período sem pedidos (ex.: 01/01/2025 a 31/01/2025). | Unidades vendidas = **0**; cobertura vazia para todos; nenhum erro. O estoque e a reposição não mudam. | RN-01, RN-09 |
 | **CA-10** | Produto sem vendas (Hanging Basket). | Aparece na lista de reposição com 0 unidades vendidas e cobertura vazia. | RN-09 |
-| **CA-11** | Relacionar produtos e itens de pedido. | O valor do estoque de qualquer produto com vários itens de pedido (ex.: Fiddle-Leaf Fig, 3 itens) é contado uma vez: 14 × US$ 18 = **US$ 252,00**. | RN-07 |
+| **CA-11** | Relacionar produtos e itens de pedido. | O valor do estoque de qualquer produto com vários itens de pedido (ex.: Fiddle-Leaf Fig, 4 itens) é contado uma vez: 14 × US$ 18 = **US$ 252,00**. | RN-07 |
 | **CA-12** | CSV com linhas inválidas (item sem pedido, quantidade 0, status desconhecido). | As linhas são excluídas das vendas e o painel mostra um aviso com a contagem. | RF-01, RN-10 |
 | **CA-13** | CSV com `quantity_on_hand` ausente ou negativo. | A carga é interrompida com mensagem que indica o arquivo, o campo e o `product_id`. | RN-10 |
 | **CA-14** | Verificar os CSVs depois de usar o painel. | Os arquivos de `data/raw/` não mudaram. | RF-01 |

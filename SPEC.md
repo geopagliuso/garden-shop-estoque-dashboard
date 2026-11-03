@@ -129,7 +129,7 @@ Lista vazia ou `None` em categoria, fornecedor ou situação significa "todos". 
 - O `view` tem **exatamente uma linha por `product_id`** (verificado por teste). A junção com `categories` e `suppliers` é por chave única (`category_id`, `supplier_id`).
 - `order_items` **nunca** é ligada diretamente a `products` antes de agregar. O passo 2 reduz `order_items` a uma linha por produto, e só então ocorre o `left join`.
 - Se uma junção aumentar o número de linhas do `view` em relação a `products`, `build_product_view` levanta `DataError`.
-- Efeito de errar: um produto com 3 itens de pedido (Fiddle-Leaf Fig) teria o estoque contado 3 vezes (US$ 756 em vez de US$ 252).
+- Efeito de errar: um produto com 4 itens de pedido (Fiddle-Leaf Fig) teria o estoque contado 4 vezes (US$ 1.008 em vez de US$ 252).
 
 ## 8. Erros e valores ausentes
 
@@ -177,6 +177,7 @@ O recorte contém 6 produtos e os pedidos ligados a eles, tirados das linhas ori
 
 | Pedido | Status | Data | Item (produto × qtd) |
 |---|---|---|---|
+| 1 | shipped | 02/03/2024 | 1 × 1 |
 | 10 | shipped | 28/02/2024 | 1 × 1 |
 | 18 | shipped | 05/06/2024 | 1 × 2 |
 | 24 | shipped | 30/01/2024 | 1 × 1 |
@@ -191,7 +192,7 @@ O recorte contém 6 produtos e os pedidos ligados a eles, tirados das linhas ori
 | Indicador | Conta | Esperado |
 |---|---|---|
 | Produtos no escopo | 1, 4, 7, 9, 14 | **5** |
-| Unidades vendidas | 1: 1+2+1 = 4; 4: 3+2 = 5; 7: 4; 9: 1 (o cancelado não conta); 14: 0 → 4+5+4+1+0 | **14** |
+| Unidades vendidas | 1: 1+1+2+1 = 5; 4: 3+2 = 5; 7: 4; 9: 1 (o cancelado não conta); 14: 0 → 5+5+4+1+0 | **15** |
 | Valor do estoque a custo | 14×18 + 8×5 + 5×0,9 + 18×11 + 0×6 = 252 + 40 + 4,5 + 198 + 0 | **494,50** |
 | Produtos a repor | 4 (8<12), 7 (5<40), 14 (0<10); 1 e 9 estão acima do ponto | **3** |
 | Estoque zerado | produto 14 | **1** |
@@ -203,13 +204,13 @@ O recorte contém 6 produtos e os pedidos ligados a eles, tirados das linhas ori
 
 | Cenário | Esperado |
 |---|---|
-| Incluir descontinuados | Produtos no escopo **6**; valor do estoque **526,50** (494,50 + 4×8); a repor **3**; custo para repor **111,50**; unidades **14**. |
+| Incluir descontinuados | Produtos no escopo **6**; valor do estoque **526,50** (494,50 + 4×8); a repor **3**; custo para repor **111,50**; unidades **15**. |
 | Período 01/06/2024 a 30/06/2024 | Unidades **4** (pedido 18: 2 do produto 1; pedido 19: 2 do produto 4). Valor do estoque **494,50**; a repor **3**. |
-| Só status `shipped` | Unidades **11** (4 + 3 + 4 + 0). |
-| Contando o cancelado por engano | Unidades seriam 15. O teste garante 14. |
+| Só status `shipped` | Unidades **12** (5 + 3 + 4 + 0). |
+| Contando o cancelado por engano | Unidades seriam 16. O teste garante 15. |
 | Fornecedor "Terra Pots Co" e categoria "Tools" | Escopo vazio: todos os indicadores 0 e lista vazia. |
 | Período 01/01/2025 a 31/01/2025 | Unidades **0**, cobertura vazia em todas as linhas; valor do estoque **494,50**. |
-| Junção errada (itens × produtos) | O produto 1 teria estoque contado 3 vezes (756 em vez de 252). O teste garante 252. |
+| Junção errada (itens × produtos) | O produto 1 (4 itens de pedido) teria estoque contado 4 vezes (1.008 em vez de 252). O teste garante 252. |
 
 ### 10.2 Dados originais (`data/raw/`), filtros padrão
 
@@ -261,4 +262,5 @@ Cada regra tem pelo menos um teste automatizado, escrito **antes** da implementa
 |---|---|---|
 | 02/11/2026 | `pending` e `processing` contam como venda efetiva; só `cancelled` sai. | RN-02. O filtro de status permite ver só `shipped`. |
 | 02/11/2026 | Descontinuados entram em escopo, valor e vendas quando a chave está ligada, mas nunca na reposição. | RN-03. |
+| 02/11/2026 | Ao montar o recorte a partir das linhas originais, a conta à mão do Fiddle-Leaf Fig estava errada: faltava o pedido 1 (4 itens, não 3). | Seção 10.1 corrigida (unidades 15, só shipped 12, junção errada 1.008). |
 | 02/11/2026 | O dicionário diz `DD/MM/AAAA`, mas os CSVs usam `AAAA-MM-DD`. | A leitura aceita os dois (seção 8). |
